@@ -1,0 +1,248 @@
+/* =====================================================
+   NOTEBOOK ENGINE
+===================================================== */
+
+.slides-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding: 40px 0 80px;
+
+    background: #f5f5f7;
+}
+
+/* =====================================================
+   SINGLE NOTE PAGE
+===================================================== */
+
+.note-slide {
+
+    position: relative;
+
+    width: min(900px, calc(100% - 60px));
+    max-width: 900px;
+
+    height: 1200px;
+    min-height: 1200px;
+
+    margin: 0 auto;
+
+    background: white;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 5px 18px rgba(0,0,0,.05),
+        0 20px 45px rgba(0,0,0,.05);
+
+    overflow: hidden;
+}
+
+/* =====================================================
+   TRANSPARENT LAYERS
+===================================================== */
+
+.slide-layer{
+
+    position:absolute;
+
+    inset:0;
+
+    width:100%;
+    height:100%;
+}
+
+/* =====================================================
+   BACKGROUND
+===================================================== */
+
+.background-layer{
+
+    z-index:0;
+
+    background:white;
+}
+
+/* =====================================================
+   TEXT LAYER
+===================================================== */
+
+.text-layer{
+
+    z-index:10;
+
+    pointer-events:auto;
+}
+
+/* =====================================================
+   DRAWING LAYER
+===================================================== */
+
+.drawing-layer{
+
+    z-index:20;
+
+    pointer-events:none;
+}
+
+.drawing-layer.enabled{
+
+    pointer-events:auto;
+}
+
+/* =====================================================
+   FUTURE LAYERS
+===================================================== */
+
+.image-layer{
+
+    z-index:30;
+
+    pointer-events:none;
+}
+
+.formula-layer{
+
+    z-index:40;
+
+    pointer-events:none;
+}
+
+.annotation-layer{
+
+    z-index:50;
+
+    pointer-events:none;
+}
+
+.ai-layer{
+
+    z-index:60;
+
+    pointer-events:none;
+}
+
+/* =====================================================
+   TEXT BLOCK
+===================================================== */
+
+.text-block{
+
+    width:100%;
+    height:100%;
+}
+
+/* Remove card look from editor */
+
+.editor-content{
+
+    width:100%;
+    height:100%;
+
+    overflow:visible;
+
+    background:transparent;
+
+    padding:0;
+}
+
+.text-block .ProseMirror{
+
+    min-height:1200px;
+
+    padding:60px;
+
+    outline:none;
+
+    border:none;
+
+    background:transparent;
+
+    box-shadow:none;
+
+    border-radius:0;
+
+    max-width:none;
+}
+
+/* =====================================================
+   DRAWING
+===================================================== */
+
+.drawing-block{
+
+    width:100%;
+    height:100%;
+}
+
+.drawing-canvas{
+
+    width:100%;
+    height:100%;
+
+    display:block;
+
+    background:transparent;
+
+    cursor:default;
+}
+
+.drawing-active{
+
+    cursor:crosshair;
+}
+
+/* =====================================================
+   FLOATING BUTTON
+===================================================== */
+
+.drawing-toggle{
+
+    position:absolute;
+
+    right:25px;
+
+    bottom:25px;
+
+    z-index:1000;
+
+    border:none;
+
+    padding:10px 18px;
+
+    border-radius:999px;
+
+    background:#111;
+
+    color:white;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.drawing-toggle:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:0 8px 20px rgba(0,0,0,.18);
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width:900px){
+
+    .note-slide{
+
+        width:calc(100% - 30px);
+    }
+
+    .text-block .ProseMirror{
+
+        padding:35px;
+    }
+
+}
