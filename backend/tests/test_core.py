@@ -33,6 +33,30 @@ class EmailClassifierTests(unittest.TestCase):
         self.assertIn(category, CATEGORIES)
         self.assertIsInstance(confidence, float)
 
+    def test_festival_promotion_is_classified_as_offer(self):
+        category, _ = classify_email(
+            "Amazon Great Indian Festival: Diwali deals and up to 60% off",
+            "Amazon Offers <deals@amazon.in>",
+            "Shop festive sale discounts, bank offers, coupons and cashback. Limited time deal."
+        )
+        self.assertEqual(category, "OFFERS")
+
+    def test_anthropic_discount_is_classified_as_offer(self):
+        category, _ = classify_email(
+            "A special offer on your Anthropic subscription",
+            "Anthropic <updates@anthropic.com>",
+            "Limited time discount. Save on your subscription with this promotional offer."
+        )
+        self.assertEqual(category, "OFFERS")
+
+    def test_college_hall_ticket_is_not_other(self):
+        category, _ = classify_email(
+            "Semester examination hall ticket released",
+            "Examinations Office <exams@university.ac.in>",
+            "Download your hall ticket before the internal examination."
+        )
+        self.assertEqual(category, "COLLEGE")
+
     def test_score_is_numeric(self):
         self.assertGreater(calculate_score("urgent exam deadline fee payment"), 0)
 
