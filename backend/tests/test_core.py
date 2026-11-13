@@ -1,8 +1,14 @@
+import os
+import tempfile
 import unittest
 from datetime import date, timedelta
+from io import BytesIO
+
+from reportlab.pdfgen import canvas
 
 from date_extractor import days_until
 from scoring_service import CATEGORIES, calculate_score, classify_email, refresh_classifier
+from pdf_service import parse_pages, read_valid_pdf
 
 
 class EmailClassifierTests(unittest.TestCase):
@@ -33,6 +39,35 @@ class EmailClassifierTests(unittest.TestCase):
     def test_days_until_accepts_python_date(self):
         target = date.today() + timedelta(days=5)
         self.assertEqual(days_until(target), 5)
+
+
+    def test_pdf_parser_accepts_a_valid_pdf(self):
+        buffer = BytesIO()
+        pdf = canvas.Canvas(buffer)
+        pdf.drawString(40, 700, "Backpack PDF test")
+        pdf.save()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as handle:
+            handle.write(buffer.getvalue())
+            path = handle.name
+        try:
+            self.assertEqual(len(read_valid_pdf(path).pages), 1)
+        finally:
+            os.remove(path)
+
+    def test_pdf_parser_rejects_a_non_pdf_file(self):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as handle:
+            handle.write(b"not a pdf")
+            path = handle.name
+        try:
+            with self.assertRaises(Exception):
+                read_valid_pdf(path)
+        finally:
+            os.remove(path)
+
+    def test_page_range_is_bounded(self):
+        self.assertEqual(parse_pages("1-3, 5"), {1, 2, 3, 5})
+        with self.assertRaises(Exception):
+            parse_pages("1-999999999")
 
     def test_days_until_accepts_iso_string(self):
         target = (date.today() + timedelta(days=3)).isoformat()
