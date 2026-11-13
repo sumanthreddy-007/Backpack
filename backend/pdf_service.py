@@ -18,7 +18,7 @@ def validate_pdf(file: UploadFile) -> bool:
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 
 async def save_upload_file(file: UploadFile, session_folder: str) -> str:
-    raw_name = os.path.basename((file.filename or "upload").replace("\\\\", "/"))
+    raw_name = os.path.basename((file.filename or "upload").replace("\\", "/"))
     safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", raw_name) or "upload"
     content = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
