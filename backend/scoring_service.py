@@ -2,7 +2,7 @@
 
 The classifier is intentionally local: no email content is sent to an external
 AI service.  It combines a small curated seed set with the user's already
-stored/labeled emails and retrains when emails are synced.
+explicit user-corrected labels and retrains when emails are synced.
 """
 
 import re
