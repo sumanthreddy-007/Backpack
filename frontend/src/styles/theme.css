@@ -1,23 +1,28 @@
-/* Shared Backpack design tokens. Page-specific dimensions stay local. */
+/* Shared design tokens: monochrome base, electric violet and golden yellow accents. */
 :root {
   color-scheme: light;
   --bg: #f7f7f8;
   --surface: #fff;
+  --surface-muted: #f3f4f6;
   --text: #171717;
   --text-light: #686868;
   --border: #e5e5e7;
+  --border-strong: #c9cbd1;
   --primary: #171717;
   --primary-hover: #292929;
   --accent: #7652ff;
-  --accent-soft: rgba(118,82,255,.10);
-  --accent-yellow: #f3df45;
+  --accent-hover: #6340ed;
+  --accent-soft: rgba(118, 82, 255, .10);
+  --accent-yellow: #f4d44d;
+  --accent-yellow-soft: rgba(244, 212, 77, .18);
   --radius-sm: 5px;
   --radius-md: 8px;
   --radius-lg: 12px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
-  --shadow-md: 0 4px 14px rgba(0,0,0,.07);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .05);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, .07);
   --transition: none;
 }
+
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .55; }
 input, textarea, select { color: var(--text); }
