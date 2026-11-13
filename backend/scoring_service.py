@@ -122,8 +122,8 @@ DEADLINE_WORDS = {"last date":50,"before":20,"due":30,"deadline":50,"closing dat
 def _normalise(value: str) -> str:
  value = html.unescape(value or "")
  value = re.sub(r"<[^>]+>", " ", value)
- value = re.sub(r"https?://\\S+", " ", value)
- return re.sub(r"\\s+", " ", value.lower()).strip()
+ value = re.sub(r"https?://\S+", " ", value)
+ return re.sub(r"\s+", " ", value.lower()).strip()
 
 def _bootstrap_training():
  texts, labels = [], []
