@@ -583,3 +583,14 @@ kbd { border:1px solid #d2d4d8; border-bottom-width:2px; background:#f7f7f8; bor
 .notes-page :focus-visible { outline: 2px solid #7652ff; outline-offset: 2px; }
 .notes-page .note-item.active { background: #171717; border-color: #171717; color: #fff; }
 .notes-page .editor-action-btn:focus-visible, .notes-page button:focus-visible { outline: 2px solid #7652ff; outline-offset: 2px; }
+
+/* Restore semantic list markers inside the editor after the app-wide reset. */
+.text-block .ProseMirror ul:not([data-type="taskList"]) { list-style: disc; }
+.text-block .ProseMirror ol { list-style: decimal; }
+.text-block .ProseMirror ul[data-type="taskList"] { list-style: none; }
+.notes-page .note-unsaved-dot { background: #f3df45; }
+.notes-page .folder-row-wrap.active .folder-row { color: #7652ff; }
+.notes-page .notes-sidebar-actions button:hover,
+.notes-page .folder-menu:hover,
+.notes-page .note-more:hover { color: #7652ff; }
+.notes-page .toolbar-btn.active { border-color: #7652ff; background: #7652ff; }
