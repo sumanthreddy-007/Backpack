@@ -1,5 +1,6 @@
 import os
 import re
+import uuid
 from fastapi import UploadFile, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 
@@ -15,6 +16,24 @@ from sandbox import create_sandbox, cleanup_after_delay
 def validate_pdf(file: UploadFile) -> bool:
     return bool(file.filename and file.filename.lower().endswith(".pdf"))
 
+
+def read_valid_pdf(path: str):
+    """Validate the PDF signature, parse strictly, and cap page count."""
+    try:
+        with open(path, "rb") as source:
+            if source.read(5) != b"%PDF-":
+                raise HTTPException(status_code=400, detail="The uploaded file is not a PDF.")
+        reader = PdfReader(path, strict=True)
+        if reader.is_encrypted:
+            raise HTTPException(status_code=400, detail="Password-protected PDFs are not supported.")
+        if len(reader.pages) > 500:
+            raise HTTPException(status_code=413, detail="PDFs are limited to 500 pages.")
+        return reader
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="The PDF is damaged or could not be safely read.")
+
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 
 async def save_upload_file(file: UploadFile, session_folder: str) -> str:
@@ -23,7 +42,8 @@ async def save_upload_file(file: UploadFile, session_folder: str) -> str:
     content = await file.read(MAX_UPLOAD_BYTES + 1)
     if len(content) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="File exceeds the 15 MB upload limit")
-    file_path = os.path.join(session_folder, safe_name)
+    # Unique names prevent duplicate uploads overwriting each other.
+    file_path = os.path.join(session_folder, f"{uuid.uuid4().hex}_{safe_name}")
     with open(file_path, "wb") as output:
         output.write(content)
     return file_path
@@ -59,7 +79,15 @@ async def word_to_pdf(file: UploadFile, background_tasks: BackgroundTasks):
     session_folder = create_sandbox()
     docx_path = await save_upload_file(file, session_folder)
     
-    document = Document(docx_path)
+    try:
+        with open(docx_path, "rb") as source:
+            if source.read(4) != b"PK\x03\x04":
+                raise HTTPException(status_code=400, detail="The uploaded file is not a valid DOCX document.")
+        document = Document(docx_path)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="The DOCX file is damaged or could not be read.")
     safe_stem = os.path.splitext(os.path.basename((file.filename or "document").replace("\\", "/")))[0]
     safe_stem = re.sub(r"[^A-Za-z0-9._-]", "_", safe_stem) or "document"
     pdf_name = safe_stem + ".pdf"
@@ -97,7 +125,7 @@ async def merge_pdfs(files: list[UploadFile], background_tasks: BackgroundTasks)
             raise HTTPException(status_code=400, detail=f"{file.filename} is not a valid PDF")
             
         pdf_path = await save_upload_file(file, session_folder)
-        reader = PdfReader(pdf_path)
+        reader = read_valid_pdf(pdf_path)
         
         for page in reader.pages:
             writer.add_page(page)
