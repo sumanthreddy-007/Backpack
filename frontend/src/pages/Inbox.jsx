@@ -42,6 +42,16 @@ function Inbox() {
     setCounts(countRes.data || {});
   };
 
+  const correctCategory = async (gmailId, category) => {
+    try {
+      await axios.post(`${API}/email-feedback`, { gmail_id: gmailId, category });
+      await loadStored();
+      setMessage("Correction saved. Backpack will use this label for future learning.");
+    } catch (error) {
+      setMessage(error.response?.data?.detail || "Could not save this correction.");
+    }
+  };
+
   const syncEmails = async () => {
     setLoading(true);
     setMessage("");
@@ -153,6 +163,8 @@ function Inbox() {
             filteredEmails.map((email) => (
               <EmailCard
                 key={email.gmail_id || `${email.subject}-${email.sender}`}
+                gmailId={email.gmail_id}
+                onCategoryChange={correctCategory}
                 subject={email.subject}
                 sender={email.sender}
                 priority={email.priority}
