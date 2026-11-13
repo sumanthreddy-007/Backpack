@@ -251,7 +251,7 @@ def reclassify_stored(limit: int = 500):
                       SELECT 1 FROM email_feedback WHERE gmail_id=%s
                   )
             """, (category, get_priority(score), score, row["gmail_id"], row["gmail_id"]))
-            updated += 1
+            updated += cursor.rowcount
         conn.commit()
     finally:
         cursor.close()
