@@ -111,7 +111,7 @@ function Inbox() {
         <div className="inbox-guide">
           <strong>Choose a box first.</strong>
           <span>For example, open <b>Events & Fests</b> for college fests, Diwali events or invitations.</span>
-          <span className="inbox-guide-model">Local ML classifier · existing stored mail + curated examples · no external AI service</span>
+          <span className="inbox-guide-model">Local ML · curated examples + your corrections · no external AI service</span>
         </div>
 
         <div className="category-grid" aria-label="Email categories">
