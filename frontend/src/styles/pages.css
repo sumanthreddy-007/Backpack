@@ -26,7 +26,7 @@
 .deadlines-header,
 .pdf-header {
     padding: 30px 40px;
-    background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+    background: #ffffff;
     border-bottom: 1px solid #e5e7eb;
     flex-shrink: 0;
 }
@@ -140,9 +140,9 @@
 .page-input:focus,
 .page-select:focus,
 .page-textarea:focus {
-    border-color: #2563eb;
+    border-color: #7652ff;
     background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px rgba(118, 82, 255, 0.12);
 }
 
 .page-input[type="file"] {
@@ -207,8 +207,8 @@
 }
 
 .email-card:hover {
-    border-color: #2563eb;
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.12);
+    border-color: #7652ff;
+    box-shadow: 0 6px 16px rgba(118, 82, 255, 0.12);
     transform: translateY(-2px);
 }
 
@@ -257,7 +257,7 @@
 }
 
 .deadline-date {
-    color: #2563eb;
+    color: #7652ff;
     font-size: 14px;
     font-weight: 600;
 }
@@ -524,3 +524,7 @@
   font: inherit;
 }
 .email-correction select:disabled { opacity: .6; }
+
+/* Static black-and-white surfaces with restrained violet focus accents. */
+.page-card, .email-card, .deadline-card { box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.email-card:hover, .page-card:hover, .pdf-tab:hover:not(.active) { transform: none; }
