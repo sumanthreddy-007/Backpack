@@ -1,10 +1,9 @@
 name: Backpack CI
 
+# Run only when manually requested from the GitHub Actions tab.
+# Automatic checks are disabled while the project is being stabilized.
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main, backpack-overhaul]
+  workflow_dispatch:
 
 jobs:
   frontend-build:
