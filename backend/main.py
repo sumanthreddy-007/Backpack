@@ -1,7 +1,8 @@
 import os
 import json
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from pdf_routes import router as pdf_router
@@ -12,6 +13,19 @@ from scoring_service import calculate_score, get_priority, classify_email, refre
 from date_extractor import extract_dates, get_nearest_future_date, days_until
 
 app = FastAPI(title="Backpack API")
+
+
+@app.middleware("http")
+async def reject_untrusted_browser_origins(request: Request, call_next):
+    """Block cross-site browser requests to this local-only API."""
+    origin = request.headers.get("origin")
+    allowed = {"http://localhost:5173", "http://127.0.0.1:5173"}
+    if origin and origin not in allowed:
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "Requests from this browser origin are not allowed."},
+        )
+    return await call_next(request)
 
 app.include_router(pdf_router)
 app.include_router(notes_router)
