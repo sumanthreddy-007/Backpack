@@ -60,7 +60,9 @@ async def word_to_pdf(file: UploadFile, background_tasks: BackgroundTasks):
     docx_path = await save_upload_file(file, session_folder)
     
     document = Document(docx_path)
-    pdf_name = os.path.splitext(file.filename)[0] + ".pdf"
+    safe_stem = os.path.splitext(os.path.basename((file.filename or "document").replace("\\", "/")))[0]
+    safe_stem = re.sub(r"[^A-Za-z0-9._-]", "_", safe_stem) or "document"
+    pdf_name = safe_stem + ".pdf"
     pdf_path = os.path.join(session_folder, pdf_name)
     
     pdf = SimpleDocTemplate(pdf_path)
