@@ -152,7 +152,7 @@ async def split_pdf(file: UploadFile, page_number: int, background_tasks: Backgr
     session_folder = create_sandbox()
     pdf_path = await save_upload_file(file, session_folder)
     
-    reader = PdfReader(pdf_path)
+    reader = read_valid_pdf(pdf_path)
     total_pages = len(reader.pages)
     
     if page_number < 1 or page_number > total_pages:
@@ -180,7 +180,7 @@ async def rotate_pdf(file: UploadFile, angle: int, background_tasks: BackgroundT
     session_folder = create_sandbox()
     pdf_path = await save_upload_file(file, session_folder)
     
-    reader = PdfReader(pdf_path)
+    reader = read_valid_pdf(pdf_path)
     writer = PdfWriter()
     
     for page in reader.pages:
@@ -200,7 +200,7 @@ async def delete_pages(file: UploadFile, pages: str, background_tasks: Backgroun
     session_folder = create_sandbox()
     pdf_path = await save_upload_file(file, session_folder)
     
-    reader = PdfReader(pdf_path)
+    reader = read_valid_pdf(pdf_path)
     remove_pages = parse_pages(pages)
     writer = PdfWriter()
     
