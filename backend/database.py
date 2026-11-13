@@ -53,7 +53,10 @@ def save_email(
             sender = EXCLUDED.sender,
             subject = EXCLUDED.subject,
             body = EXCLUDED.body,
-            category = EXCLUDED.category,
+            category = COALESCE(
+                (SELECT category FROM email_feedback WHERE gmail_id = EXCLUDED.gmail_id),
+                EXCLUDED.category
+            ),
             priority = EXCLUDED.priority,
             score = EXCLUDED.score,
             deadline = EXCLUDED.deadline,
@@ -74,28 +77,80 @@ def save_email(
     conn.close()
     # ==========================================================
 def get_training_emails(limit=1000):
-    """Return existing classified mail as local training examples."""
+    """Return only human-corrected labels; never train on model predictions."""
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT sender, subject, body, category
-        FROM emails
-        WHERE category IS NOT NULL
-        ORDER BY processed_at DESC
-        LIMIT %s
-    """, (limit,))
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS email_feedback (
+                gmail_id TEXT PRIMARY KEY,
+                sender TEXT NOT NULL DEFAULT '',
+                subject TEXT NOT NULL DEFAULT '',
+                body TEXT NOT NULL DEFAULT '',
+                category TEXT NOT NULL,
+                corrected_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("""
+            SELECT sender, subject, body, category
+            FROM email_feedback
+            ORDER BY corrected_at DESC
+            LIMIT %s
+        """, (max(1, min(int(limit), 5000)),))
+        rows = cursor.fetchall()
+        conn.commit()
+    finally:
+        cursor.close()
+        conn.close()
     return [
-        {
-            "text": f"{r[0] or ''} {r[1] or ''} {r[2] or ''}",
-            "category": r[3],
-        }
+        {"text": f"{r[0] or ''} {r[1] or ''} {r[2] or ''}", "category": r[3]}
         for r in rows
     ]
 
 
+def save_email_feedback(gmail_id, category):
+    """Persist a user's corrected label and update the visible email row."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS email_feedback (
+                gmail_id TEXT PRIMARY KEY,
+                sender TEXT NOT NULL DEFAULT '',
+                subject TEXT NOT NULL DEFAULT '',
+                body TEXT NOT NULL DEFAULT '',
+                category TEXT NOT NULL,
+                corrected_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("""
+            SELECT sender, subject, body FROM emails WHERE gmail_id=%s
+        """, (gmail_id,))
+        row = cursor.fetchone()
+        if not row:
+            return False
+        cursor.execute("""
+            INSERT INTO email_feedback (gmail_id, sender, subject, body, category)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (gmail_id) DO UPDATE SET
+                sender=EXCLUDED.sender,
+                subject=EXCLUDED.subject,
+                body=EXCLUDED.body,
+                category=EXCLUDED.category,
+                corrected_at=CURRENT_TIMESTAMP
+        """, (gmail_id, row[0] or "", row[1] or "", row[2] or "", category))
+        cursor.execute("""
+            UPDATE emails SET category=%s, processed_at=CURRENT_TIMESTAMP
+            WHERE gmail_id=%s
+        """, (category, gmail_id))
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def get_all_email_training_rows(limit=500):

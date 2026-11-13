@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import axios from "axios";
 import { ExternalLink, RefreshCw, ShieldCheck } from "lucide-react";
 
@@ -9,6 +9,33 @@ function Connect() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const [credentialsFile, setCredentialsFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInput = useRef(null);
+
+  const uploadCredentials = async () => {
+    if (!credentialsFile) {
+      setMessage("Choose the OAuth Desktop app JSON file first.");
+      setMessageType("error");
+      return;
+    }
+    const form = new FormData();
+    form.append("file", credentialsFile);
+    setUploading(true);
+    setMessage("");
+    try {
+      const res = await axios.post(`${API}/gmail-credentials`, form, { timeout: 15000 });
+      setMessage(res.data.message);
+      setMessageType("success");
+      setCredentialsFile(null);
+      if (fileInput.current) fileInput.current.value = "";
+    } catch (error) {
+      setMessage(error?.response?.data?.detail || "Could not save the OAuth configuration.");
+      setMessageType("error");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const connectGmail = async () => {
     setLoading(true);
@@ -62,7 +89,7 @@ function Connect() {
           <p className="connect-description">Backpack requests <strong>readonly</strong> Gmail access. It cannot send, delete or edit your mail.</p>
 
           <div className="connect-actions">
-            <button className="page-btn connect-primary" onClick={connectGmail} disabled={loading}>
+            <button className="page-btn connect-primary" onClick={connectGmail} disabled={loading || uploading}>
               {loading ? "Waiting for Google..." : profile ? "Refresh connection" : "Connect Gmail"}
             </button>
             {profile && (
@@ -73,6 +100,17 @@ function Connect() {
           </div>
 
           {message && <div className={`connect-message ${messageType}`}>{message}</div>}
+
+          <div className="oauth-upload">
+            <div className="setup-heading">Google OAuth configuration</div>
+            <p className="connect-description">Select the Desktop app JSON you downloaded. Backpack saves it locally in the backend; the client secret is not displayed in the page.</p>
+            <div className="connect-actions">
+              <input ref={fileInput} type="file" accept=".json,application/json" onChange={(event) => setCredentialsFile(event.target.files?.[0] || null)} aria-label="Choose Google OAuth client JSON" />
+              <button type="button" className="page-btn connect-primary" onClick={uploadCredentials} disabled={!credentialsFile || uploading}>
+                {uploading ? "Saving configuration…" : "Save Google details"}
+              </button>
+            </div>
+          </div>
 
           <div className="setup-guide">
             <div className="setup-heading">First-time setup</div>

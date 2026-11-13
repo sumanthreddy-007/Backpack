@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, date
 from dateutil import parser
 
 DATE_PATTERNS = [
@@ -129,14 +129,14 @@ def days_until(date_string):
         return None
 
     try:
-
-        target_date = datetime.strptime(
-            date_string,
-            "%Y-%m-%d"
-        ).date()
+        if isinstance(date_string, datetime):
+            target_date = date_string.date()
+        elif isinstance(date_string, date):
+            target_date = date_string
+        else:
+            target_date = datetime.strptime(str(date_string), "%Y-%m-%d").date()
 
         today = datetime.today().date()
-
         return (target_date - today).days
 
     except Exception:

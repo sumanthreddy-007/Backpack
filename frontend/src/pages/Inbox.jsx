@@ -42,6 +42,16 @@ function Inbox() {
     setCounts(countRes.data || {});
   };
 
+  const correctCategory = async (gmailId, category) => {
+    try {
+      await axios.post(`${API}/email-feedback`, { gmail_id: gmailId, category });
+      await loadStored();
+      setMessage("Correction saved. Backpack will use this label for future learning.");
+    } catch (error) {
+      setMessage(error.response?.data?.detail || "Could not save this correction.");
+    }
+  };
+
   const syncEmails = async () => {
     setLoading(true);
     setMessage("");
@@ -101,7 +111,7 @@ function Inbox() {
         <div className="inbox-guide">
           <strong>Choose a box first.</strong>
           <span>For example, open <b>Events & Fests</b> for college fests, Diwali events or invitations.</span>
-          <span className="inbox-guide-model">Local ML classifier · existing stored mail + curated examples · no external AI service</span>
+          <span className="inbox-guide-model">Local ML · curated examples + your corrections · no external AI service</span>
         </div>
 
         <div className="category-grid" aria-label="Email categories">
@@ -153,6 +163,8 @@ function Inbox() {
             filteredEmails.map((email) => (
               <EmailCard
                 key={email.gmail_id || `${email.subject}-${email.sender}`}
+                gmailId={email.gmail_id}
+                onCategoryChange={correctCategory}
                 subject={email.subject}
                 sender={email.sender}
                 priority={email.priority}

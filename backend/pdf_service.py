@@ -1,4 +1,7 @@
 import os
+import re
+import uuid
+import zipfile
 from fastapi import UploadFile, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 
@@ -14,10 +17,36 @@ from sandbox import create_sandbox, cleanup_after_delay
 def validate_pdf(file: UploadFile) -> bool:
     return bool(file.filename and file.filename.lower().endswith(".pdf"))
 
+
+def read_valid_pdf(path: str):
+    """Validate the PDF signature, parse strictly, and cap page count."""
+    try:
+        with open(path, "rb") as source:
+            if source.read(5) != b"%PDF-":
+                raise HTTPException(status_code=400, detail="The uploaded file is not a PDF.")
+        reader = PdfReader(path, strict=True)
+        if reader.is_encrypted:
+            raise HTTPException(status_code=400, detail="Password-protected PDFs are not supported.")
+        if len(reader.pages) > 500:
+            raise HTTPException(status_code=413, detail="PDFs are limited to 500 pages.")
+        return reader
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="The PDF is damaged or could not be safely read.")
+
+MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+
 async def save_upload_file(file: UploadFile, session_folder: str) -> str:
-    file_path = os.path.join(session_folder, file.filename)
-    with open(file_path, "wb") as f:
-        f.write(await file.read())
+    raw_name = os.path.basename((file.filename or "upload").replace("\\", "/"))
+    safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", raw_name) or "upload"
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds the 15 MB upload limit")
+    # Unique names prevent duplicate uploads overwriting each other.
+    file_path = os.path.join(session_folder, f"{uuid.uuid4().hex}_{safe_name}")
+    with open(file_path, "wb") as output:
+        output.write(content)
     return file_path
 
 def create_response(session_folder: str, output_path: str, filename: str, background_tasks: BackgroundTasks):
@@ -37,6 +66,8 @@ def parse_pages(pages: str) -> set:
             part = part.strip()
             if "-" in part:
                 start, end = map(int, part.split("-"))
+                if start < 1 or end < start or end - start >= 500:
+                    raise HTTPException(status_code=400, detail="Page ranges must be ascending and contain fewer than 500 pages.")
                 page_set.update(range(start, end + 1))
             elif part.isdigit():
                 page_set.add(int(part))
@@ -51,8 +82,22 @@ async def word_to_pdf(file: UploadFile, background_tasks: BackgroundTasks):
     session_folder = create_sandbox()
     docx_path = await save_upload_file(file, session_folder)
     
-    document = Document(docx_path)
-    pdf_name = os.path.splitext(file.filename)[0] + ".pdf"
+    try:
+        with open(docx_path, "rb") as source:
+            if source.read(4) != b"PK\x03\x04":
+                raise HTTPException(status_code=400, detail="The uploaded file is not a valid DOCX document.")
+        with zipfile.ZipFile(docx_path) as archive:
+            entries = archive.infolist()
+            if len(entries) > 1000 or sum(item.file_size for item in entries) > 50 * 1024 * 1024:
+                raise HTTPException(status_code=413, detail="DOCX expands beyond the allowed document size.")
+        document = Document(docx_path)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="The DOCX file is damaged or could not be read.")
+    safe_stem = os.path.splitext(os.path.basename((file.filename or "document").replace("\\", "/")))[0]
+    safe_stem = re.sub(r"[^A-Za-z0-9._-]", "_", safe_stem) or "document"
+    pdf_name = safe_stem + ".pdf"
     pdf_path = os.path.join(session_folder, pdf_name)
     
     pdf = SimpleDocTemplate(pdf_path)
@@ -87,8 +132,10 @@ async def merge_pdfs(files: list[UploadFile], background_tasks: BackgroundTasks)
             raise HTTPException(status_code=400, detail=f"{file.filename} is not a valid PDF")
             
         pdf_path = await save_upload_file(file, session_folder)
-        reader = PdfReader(pdf_path)
-        
+        reader = read_valid_pdf(pdf_path)
+        if len(writer.pages) + len(reader.pages) > 500:
+            raise HTTPException(status_code=413, detail="Merged PDFs are limited to 500 pages total.")
+
         for page in reader.pages:
             writer.add_page(page)
             
@@ -105,7 +152,7 @@ async def split_pdf(file: UploadFile, page_number: int, background_tasks: Backgr
     session_folder = create_sandbox()
     pdf_path = await save_upload_file(file, session_folder)
     
-    reader = PdfReader(pdf_path)
+    reader = read_valid_pdf(pdf_path)
     total_pages = len(reader.pages)
     
     if page_number < 1 or page_number > total_pages:
@@ -133,7 +180,7 @@ async def rotate_pdf(file: UploadFile, angle: int, background_tasks: BackgroundT
     session_folder = create_sandbox()
     pdf_path = await save_upload_file(file, session_folder)
     
-    reader = PdfReader(pdf_path)
+    reader = read_valid_pdf(pdf_path)
     writer = PdfWriter()
     
     for page in reader.pages:
@@ -153,7 +200,7 @@ async def delete_pages(file: UploadFile, pages: str, background_tasks: Backgroun
     session_folder = create_sandbox()
     pdf_path = await save_upload_file(file, session_folder)
     
-    reader = PdfReader(pdf_path)
+    reader = read_valid_pdf(pdf_path)
     remove_pages = parse_pages(pages)
     writer = PdfWriter()
     
@@ -191,6 +238,12 @@ async def note_to_pdf(payload: dict, background_tasks: BackgroundTasks):
     slides = content.get("slides") if isinstance(content, dict) else None
     if not isinstance(slides, list) or not slides:
         slides = [{"content": content if isinstance(content, dict) else {}, "drawings": []}]
+    if len(slides) > 30:
+        raise HTTPException(status_code=413, detail="Note exports are limited to 30 pages.")
+    for slide in slides:
+        strokes = slide.get("drawings") or []
+        if len(strokes) > 300 or any(len(stroke.get("points") or []) > 2000 for stroke in strokes):
+            raise HTTPException(status_code=413, detail="This note contains too many drawing points to export safely.")
 
     session_folder = create_sandbox()
     safe_title = re.sub(r"[^A-Za-z0-9._ -]", "", title).strip() or "note"
@@ -270,11 +323,12 @@ async def note_to_pdf(payload: dict, background_tasks: BackgroundTasks):
 
             safe = escape(text).replace("\n", "<br/>")
             paragraph = Paragraph(safe, style)
-            width, height = paragraph.wrap(CANVAS_WIDTH - 120, CANVAS_HEIGHT)
+            available_width = (CANVAS_WIDTH - 120) * scale
+            _, height = paragraph.wrap(available_width, (CANVAS_HEIGHT - 120) * scale)
             draw_x = offset_x + 60 * scale
-            draw_y = offset_y + (cursor_y - height) * scale
+            draw_y = offset_y + cursor_y * scale - height
             paragraph.drawOn(pdf, draw_x, draw_y)
-            cursor_y -= (height + style.spaceAfter)
+            cursor_y -= (height + style.spaceAfter) / scale
             if cursor_y < 40:
                 break
 
@@ -326,8 +380,9 @@ async def note_to_pdf(payload: dict, background_tasks: BackgroundTasks):
 
     for slide_index, slide in enumerate(slides):
         # Draw text and drawing in their original shared coordinate system.
-        draw_text_blocks(slide.get("content", {}))
+        # Keep the two editor layers separate: ink is painted first and text remains legible above it.
         draw_strokes(slide.get("drawings") or [])
+        draw_text_blocks(slide.get("content", {}))
         pdf.showPage()
 
     pdf.save()

@@ -109,7 +109,7 @@ function NotesEditor({ note, reloadNotes, onDirtyChange }) {
   };
 
   const saveNote = async () => {
-    if (!note || saving) return;
+    if (!note || saving) return false;
     setSaving(true);
     try {
       await axios.put(`${API}/api/notes/${note.id}`, {
@@ -121,16 +121,24 @@ function NotesEditor({ note, reloadNotes, onDirtyChange }) {
       onDirtyChange?.(note.id, false);
       setLastSaved(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
       reloadNotes?.();
+      return true;
     } catch (error) {
       console.error("Failed to save note", error);
       setDirty(true);
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
   const exportPdf = async () => {
-    if (dirty) await saveNote();
+    if (dirty) {
+      const saved = await saveNote();
+      if (!saved) {
+        alert("Your note could not be saved. Fix the save error before exporting the PDF.");
+        return;
+      }
+    }
     try {
       const res = await axios.post(`${API}/pdf/note-to-pdf`, { title: titleRef.current, content: { slides: slidesRef.current } }, { responseType: "blob" });
       const url = URL.createObjectURL(res.data);
