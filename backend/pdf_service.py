@@ -1,6 +1,7 @@
 import os
 import re
 import uuid
+import zipfile
 from fastapi import UploadFile, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 
@@ -65,6 +66,8 @@ def parse_pages(pages: str) -> set:
             part = part.strip()
             if "-" in part:
                 start, end = map(int, part.split("-"))
+                if start < 1 or end < start or end - start >= 500:
+                    raise HTTPException(status_code=400, detail="Page ranges must be ascending and contain fewer than 500 pages.")
                 page_set.update(range(start, end + 1))
             elif part.isdigit():
                 page_set.add(int(part))
@@ -83,6 +86,10 @@ async def word_to_pdf(file: UploadFile, background_tasks: BackgroundTasks):
         with open(docx_path, "rb") as source:
             if source.read(4) != b"PK\x03\x04":
                 raise HTTPException(status_code=400, detail="The uploaded file is not a valid DOCX document.")
+        with zipfile.ZipFile(docx_path) as archive:
+            entries = archive.infolist()
+            if len(entries) > 1000 or sum(item.file_size for item in entries) > 50 * 1024 * 1024:
+                raise HTTPException(status_code=413, detail="DOCX expands beyond the allowed document size.")
         document = Document(docx_path)
     except HTTPException:
         raise
@@ -126,7 +133,9 @@ async def merge_pdfs(files: list[UploadFile], background_tasks: BackgroundTasks)
             
         pdf_path = await save_upload_file(file, session_folder)
         reader = read_valid_pdf(pdf_path)
-        
+        if len(writer.pages) + len(reader.pages) > 500:
+            raise HTTPException(status_code=413, detail="Merged PDFs are limited to 500 pages total.")
+
         for page in reader.pages:
             writer.add_page(page)
             
@@ -229,6 +238,12 @@ async def note_to_pdf(payload: dict, background_tasks: BackgroundTasks):
     slides = content.get("slides") if isinstance(content, dict) else None
     if not isinstance(slides, list) or not slides:
         slides = [{"content": content if isinstance(content, dict) else {}, "drawings": []}]
+    if len(slides) > 30:
+        raise HTTPException(status_code=413, detail="Note exports are limited to 30 pages.")
+    for slide in slides:
+        strokes = slide.get("drawings") or []
+        if len(strokes) > 300 or any(len(stroke.get("points") or []) > 2000 for stroke in strokes):
+            raise HTTPException(status_code=413, detail="This note contains too many drawing points to export safely.")
 
     session_folder = create_sandbox()
     safe_title = re.sub(r"[^A-Za-z0-9._ -]", "", title).strip() or "note"
