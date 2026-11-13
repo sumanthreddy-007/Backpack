@@ -6,9 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from pdf_routes import router as pdf_router
 from notes_routes import router as notes_router
-from database import get_connection, save_email, get_all_email_training_rows
+from database import get_connection, save_email, get_all_email_training_rows, save_email_feedback
 from gmail_service import get_gmail_service, extract_email_body, TOKEN_FILE
-from scoring_service import calculate_score, get_priority, classify_email, refresh_classifier
+from scoring_service import calculate_score, get_priority, classify_email, refresh_classifier, CATEGORIES
 from date_extractor import extract_dates, get_nearest_future_date, days_until
 
 app = FastAPI(title="Backpack API")
@@ -197,6 +197,25 @@ def important_emails():
     return sync_emails(100)
 
 
+@app.post("/email-feedback")
+def email_feedback(payload: dict):
+    gmail_id = str(payload.get("gmail_id") or "").strip()
+    category = str(payload.get("category") or "").strip().upper()
+    if not gmail_id:
+        raise HTTPException(status_code=400, detail="gmail_id is required")
+    if category not in CATEGORIES:
+        raise HTTPException(status_code=400, detail="Choose a valid email category")
+    try:
+        if not save_email_feedback(gmail_id, category):
+            raise HTTPException(status_code=404, detail="Email not found")
+        refresh_classifier()
+        return {"message": "Correction saved. The local classifier will learn from this label.", "category": category}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=500, detail="Could not save email feedback")
+
+
 @app.post("/reclassify-stored")
 def reclassify_stored(limit: int = 500):
     """Retrain locally and reclassify existing stored mail with the new taxonomy."""
@@ -214,7 +233,10 @@ def reclassify_stored(limit: int = 500):
                 UPDATE emails
                 SET category=%s, priority=%s, score=%s, processed_at=CURRENT_TIMESTAMP
                 WHERE gmail_id=%s
-            """, (category, get_priority(score), score, row["gmail_id"]))
+                  AND NOT EXISTS (
+                      SELECT 1 FROM email_feedback WHERE gmail_id=%s
+                  )
+            """, (category, get_priority(score), score, row["gmail_id"], row["gmail_id"]))
             updated += 1
         conn.commit()
     finally:
@@ -328,6 +350,6 @@ def upcoming_deadlines():
     cursor.close()
     conn.close()
     return [
-        {"subject": r[0], "sender": r[1], "deadline": str(r[2]), "score": r[3]}
+        {"subject": r[0], "sender": r[1], "deadline": str(r[2]), "score": r[3], "days_left": days_until(r[2])}
         for r in rows
     ]
