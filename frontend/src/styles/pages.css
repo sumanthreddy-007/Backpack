@@ -474,3 +474,32 @@
 .profile-row span { color:#667085; }
 .profile-row strong { color:#111827; font-weight:650; }
 @media (max-width: 700px) { .page-header,.page-body { padding-left:20px; padding-right:20px; } .connect-card,.profile-card { padding:18px; } }
+
+
+/* Gmail OAuth upload control */
+.oauth-upload {
+  max-width: 820px;
+  margin: 0 0 18px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.oauth-upload input[type="file"] {
+  max-width: 100%;
+  min-height: 40px;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  font-size: 12px;
+}
+.oauth-upload input[type="file"]::file-selector-button {
+  margin-right: 10px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #f4f4f5;
+  color: #171717;
+  cursor: pointer;
+}
