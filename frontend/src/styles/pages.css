@@ -503,3 +503,24 @@
   color: #171717;
   cursor: pointer;
 }
+
+
+.email-correction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: #686868;
+  font-size: 12px;
+}
+.email-correction select {
+  max-width: 180px;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: #171717;
+  font: inherit;
+}
+.email-correction select:disabled { opacity: .6; }
