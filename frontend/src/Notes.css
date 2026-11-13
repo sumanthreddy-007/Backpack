@@ -594,3 +594,19 @@ kbd { border:1px solid #d2d4d8; border-bottom-width:2px; background:#f7f7f8; bor
 .notes-page .folder-menu:hover,
 .notes-page .note-more:hover { color: #7652ff; }
 .notes-page .toolbar-btn.active { border-color: #7652ff; background: #7652ff; }
+
+.notes-folder-list .folder-row { min-width: 0; }
+.notes-folder-list .folder-row > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folder-count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: #f1f1f3;
+  color: #686868;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.folder-row.active .folder-count { background: #7652ff; color: #fff; }
