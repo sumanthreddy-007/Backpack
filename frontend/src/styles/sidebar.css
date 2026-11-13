@@ -65,7 +65,7 @@
 
   border-radius: 12px;
 
-  transition: 0.2s;
+  transition: none;
 }
 
 .sidebar nav a:hover {
@@ -74,8 +74,9 @@
 }
 
 .sidebar nav a.active-link {
-  background: #7652ff;
+  background: var(--accent);
   color: white;
+  box-shadow: inset 3px 0 0 var(--accent-yellow);
 }
 
 .sidebar nav a span {
