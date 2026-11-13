@@ -294,7 +294,10 @@ function Notes() {
             <div key={folder.id} className={`folder-row-wrap ${activeFolder === folder.name ? "active" : ""}`}>
               <button type="button" className="folder-row" onClick={() => setActiveFolder(folder.name)}><span aria-hidden="true">▸</span><span>{folder.name}</span></button>
               {folder.name !== "General" && (
-                <button type="button" className="folder-menu" title="Folder options" onClick={() => renameFolder(folder)}><MoreHorizontal size={14} /></button>
+                <>
+                  <button type="button" className="folder-menu" title="Rename folder" aria-label={`Rename ${folder.name}`} onClick={() => renameFolder(folder)}><MoreHorizontal size={14} /></button>
+                  <button type="button" className="folder-menu" title="Delete folder" aria-label={`Delete ${folder.name}`} onClick={() => deleteFolder(folder)}><Trash2 size={13} /></button>
+                </>
               )}
             </div>
           ))}
