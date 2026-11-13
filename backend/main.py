@@ -1,6 +1,7 @@
 import os
+import json
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
 from pdf_routes import router as pdf_router
@@ -27,6 +28,34 @@ app.add_middleware(
 @app.get("/")
 def root():
     return {"message": "Backpack Running"}
+
+
+@app.post("/gmail-credentials")
+async def upload_gmail_credentials(file: UploadFile = File(...)):
+    """Save a user's local Google OAuth Desktop-client JSON without exposing secrets to the UI."""
+    if not file.filename or not file.filename.lower().endswith(".json"):
+        raise HTTPException(status_code=400, detail="Choose the OAuth client JSON downloaded from Google Cloud.")
+    raw = await file.read(64 * 1024 + 1)
+    if len(raw) > 64 * 1024:
+        raise HTTPException(status_code=413, detail="OAuth configuration file is too large.")
+    try:
+        config = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise HTTPException(status_code=400, detail="The selected file is not valid UTF-8 JSON.")
+    installed = config.get("installed") if isinstance(config, dict) else None
+    required = ("client_id", "client_secret", "auth_uri", "token_uri")
+    if not isinstance(installed, dict) or any(not installed.get(key) for key in required):
+        raise HTTPException(status_code=400, detail="Use an OAuth Client ID configured as a Desktop app.")
+    destination = os.path.join(os.path.dirname(os.path.abspath(__file__)), "credentials.json")
+    temporary = destination + ".tmp"
+    try:
+        with open(temporary, "w", encoding="utf-8") as output:
+            json.dump(config, output)
+        os.replace(temporary, destination)
+    finally:
+        if os.path.exists(temporary):
+            os.remove(temporary)
+    return {"message": "Google OAuth client configuration saved locally. You can now connect Gmail."}
 
 
 @app.get("/connect-gmail")
