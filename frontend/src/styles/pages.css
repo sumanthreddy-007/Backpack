@@ -528,3 +528,205 @@
 /* Static black-and-white surfaces with restrained violet focus accents. */
 .page-card, .email-card, .deadline-card { box-shadow: 0 1px 2px rgba(0,0,0,.05); }
 .email-card:hover, .page-card:hover, .pdf-tab:hover:not(.active) { transform: none; }
+
+
+/* =====================================================
+   DEADLINES TABLE
+   Simple, readable table layout. Keep this scoped to
+   the deadlines page so other tables are unaffected.
+===================================================== */
+.deadlines-page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
+    background: #f7f7f8;
+}
+
+.deadlines-header {
+    flex-shrink: 0;
+    padding: 28px 40px 24px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.deadlines-header h1 {
+    margin: 0 0 6px;
+    color: #111827;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.deadlines-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 15px;
+}
+
+.deadlines-body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 24px 40px 36px;
+}
+
+.deadline-summary {
+    display: flex;
+    margin-bottom: 18px;
+}
+
+.deadline-stat {
+    min-width: 190px;
+    padding: 16px 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.deadline-stat span {
+    display: block;
+    margin-bottom: 5px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.deadline-stat strong {
+    display: block;
+    color: #111827;
+    font-size: 28px;
+    line-height: 1.2;
+    font-weight: 750;
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.deadlines-table {
+    width: 100%;
+    min-width: 680px;
+    border-collapse: collapse;
+    table-layout: auto;
+    text-align: left;
+}
+
+.deadlines-table th,
+.deadlines-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+    line-height: 1.45;
+}
+
+.deadlines-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.deadlines-table td {
+    color: #334155;
+    font-size: 13px;
+}
+
+.deadlines-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.deadlines-table tbody tr:hover {
+    background: #fafafa;
+}
+
+.deadlines-table th:nth-child(1) { width: 38%; }
+.deadlines-table th:nth-child(2) { width: 34%; }
+.deadlines-table th:nth-child(3) { width: 17%; }
+.deadlines-table th:nth-child(4) { width: 11%; }
+
+.deadline-subject {
+    color: #111827 !important;
+    font-weight: 600;
+}
+
+.deadline-sender {
+    overflow-wrap: anywhere;
+}
+
+.deadline-date {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.days-danger,
+.days-normal {
+    display: inline-block;
+    min-width: 28px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.days-danger {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.days-normal {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.deadline-table-message {
+    padding: 28px 16px !important;
+    color: #64748b !important;
+    text-align: center;
+}
+
+.deadline-error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border: 1px solid #fecaca;
+    border-radius: 7px;
+    background: #fff;
+    color: #991b1b;
+    font-size: 13px;
+}
+
+.deadline-error button {
+    flex-shrink: 0;
+    padding: 7px 11px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    color: #111827;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.deadline-error button:hover {
+    background: #f8fafc;
+}
+
+@media (max-width: 700px) {
+    .deadlines-header { padding: 22px 20px; }
+    .deadlines-header h1 { font-size: 25px; }
+    .deadlines-body { padding: 18px 20px 28px; }
+    .deadline-stat { min-width: 150px; }
+}
