@@ -131,6 +131,13 @@ def api_rename_folder(folder_id: int, folder: FolderRename):
         name = clean_name(folder.new_name)
         if not name:
             raise HTTPException(status_code=400, detail="Folder name cannot be empty")
+        existing = next((item for item in get_folders() if item["id"] == folder_id), None)
+        if existing is None:
+            raise HTTPException(status_code=404, detail="Folder not found")
+        if existing["name"] == "General":
+            raise HTTPException(status_code=400, detail="The General folder cannot be renamed")
+        if name.lower() == "general":
+            raise HTTPException(status_code=400, detail="That name is reserved for the General folder")
         rename_folder(folder_id, name)
         return {"message": "Folder renamed successfully"}
     except HTTPException:
@@ -141,6 +148,11 @@ def api_rename_folder(folder_id: int, folder: FolderRename):
 @router.delete("/folders/{folder_id}")
 def api_remove_folder(folder_id: int):
     try:
+        existing = next((item for item in get_folders() if item["id"] == folder_id), None)
+        if existing is None:
+            raise HTTPException(status_code=404, detail="Folder not found")
+        if existing["name"] == "General":
+            raise HTTPException(status_code=400, detail="The General folder cannot be deleted")
         delete_folder(folder_id)
         return {"message": "Folder deleted successfully"}
     except Exception as e:
