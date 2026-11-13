@@ -82,6 +82,8 @@ function Notes() {
   const [dirtyNotes, setDirtyNotes] = useState(new Set());
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [status, setStatus] = useState("");
+  const activeNoteIdRef = useRef(activeNoteId);
+  activeNoteIdRef.current = activeNoteId;
 
   const load = useCallback(async (keepActive = true) => {
     const [notesRes, foldersRes] = await Promise.all([
@@ -92,10 +94,10 @@ function Notes() {
     const loadedFolders = Array.isArray(foldersRes.data) ? foldersRes.data : [];
     setNotes(loadedNotes);
     setFolders(loadedFolders);
-    if (keepActive && (!activeNoteId || !loadedNotes.some((n) => n.id === activeNoteId))) {
+    if (keepActive && (!activeNoteIdRef.current || !loadedNotes.some((n) => n.id === activeNoteIdRef.current))) {
       setActiveNoteId(loadedNotes[0]?.id ?? null);
     }
-  }, [activeNoteId]);
+  }, []);
 
   useEffect(() => {
     load().catch((e) => {
@@ -289,10 +291,10 @@ function Notes() {
         </div>
 
         <div className="notes-folder-list">
-          <button type="button" className={`folder-row ${activeFolder === "All" ? "active" : ""}`} onClick={() => setActiveFolder("All")}><span aria-hidden="true">⌄</span><span>Backpack</span></button>
+          <button type="button" className={`folder-row ${activeFolder === "All" ? "active" : ""}`} onClick={() => setActiveFolder("All")} aria-current={activeFolder === "All" ? "page" : undefined}><span aria-hidden="true">⌄</span><span>Backpack</span><span className="folder-count">{notes.length}</span></button>
           {folders.map((folder) => (
             <div key={folder.id} className={`folder-row-wrap ${activeFolder === folder.name ? "active" : ""}`}>
-              <button type="button" className="folder-row" onClick={() => setActiveFolder(folder.name)}><span aria-hidden="true">▸</span><span>{folder.name}</span></button>
+              <button type="button" className="folder-row" onClick={() => setActiveFolder(folder.name)} aria-current={activeFolder === folder.name ? "page" : undefined}><span aria-hidden="true">▸</span><span>{folder.name}</span><span className="folder-count">{notes.filter((note) => note.folder === folder.name).length}</span></button>
               {folder.name !== "General" && (
                 <>
                   <button type="button" className="folder-menu" title="Rename folder" aria-label={`Rename ${folder.name}`} onClick={() => renameFolder(folder)}><MoreHorizontal size={14} /></button>
