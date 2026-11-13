@@ -1,4 +1,5 @@
 import os
+import re
 from fastapi import UploadFile, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 
@@ -14,10 +15,17 @@ from sandbox import create_sandbox, cleanup_after_delay
 def validate_pdf(file: UploadFile) -> bool:
     return bool(file.filename and file.filename.lower().endswith(".pdf"))
 
+MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+
 async def save_upload_file(file: UploadFile, session_folder: str) -> str:
-    file_path = os.path.join(session_folder, file.filename)
-    with open(file_path, "wb") as f:
-        f.write(await file.read())
+    raw_name = os.path.basename((file.filename or "upload").replace("\\\\", "/"))
+    safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", raw_name) or "upload"
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File exceeds the 15 MB upload limit")
+    file_path = os.path.join(session_folder, safe_name)
+    with open(file_path, "wb") as output:
+        output.write(content)
     return file_path
 
 def create_response(session_folder: str, output_path: str, filename: str, background_tasks: BackgroundTasks):
@@ -270,11 +278,12 @@ async def note_to_pdf(payload: dict, background_tasks: BackgroundTasks):
 
             safe = escape(text).replace("\n", "<br/>")
             paragraph = Paragraph(safe, style)
-            width, height = paragraph.wrap(CANVAS_WIDTH - 120, CANVAS_HEIGHT)
+            available_width = (CANVAS_WIDTH - 120) * scale
+            _, height = paragraph.wrap(available_width, (CANVAS_HEIGHT - 120) * scale)
             draw_x = offset_x + 60 * scale
-            draw_y = offset_y + (cursor_y - height) * scale
+            draw_y = offset_y + cursor_y * scale - height
             paragraph.drawOn(pdf, draw_x, draw_y)
-            cursor_y -= (height + style.spaceAfter)
+            cursor_y -= (height + style.spaceAfter) / scale
             if cursor_y < 40:
                 break
 
@@ -326,8 +335,9 @@ async def note_to_pdf(payload: dict, background_tasks: BackgroundTasks):
 
     for slide_index, slide in enumerate(slides):
         # Draw text and drawing in their original shared coordinate system.
-        draw_text_blocks(slide.get("content", {}))
+        # Keep the two editor layers separate: ink is painted first and text remains legible above it.
         draw_strokes(slide.get("drawings") or [])
+        draw_text_blocks(slide.get("content", {}))
         pdf.showPage()
 
     pdf.save()
