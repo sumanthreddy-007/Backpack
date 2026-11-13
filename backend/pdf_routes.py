@@ -21,48 +21,56 @@ def pdf_home():
 
 @router.post("/word-to-pdf")
 async def convert_word_to_pdf(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...)
 ):
-    return await word_to_pdf(file)
+    return await word_to_pdf(file, background_tasks)
 
 
 @router.post("/merge")
 async def merge_pdf_files(
+    background_tasks: BackgroundTasks,
     files: list[UploadFile] = File(...)
 ):
-    return await merge_pdfs(files)
+    return await merge_pdfs(files, background_tasks)
 
 
 @router.post("/split")
 async def split_pdf_file(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     page_number: int = Form(...)
 ):
     return await split_pdf(
         file,
-        page_number
+        page_number,
+        background_tasks
     )
 
 
 @router.post("/rotate")
 async def rotate_pdf_file(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     angle: int = Form(...)
 ):
     return await rotate_pdf(
         file,
-        angle
+        angle,
+        background_tasks
     )
 
 
 @router.post("/delete-pages")
 async def delete_pdf_pages(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     pages: str = Form(...)
 ):
     return await delete_pages(
         file,
-        pages
+        pages,
+        background_tasks
     )
 @router.post("/note-to-pdf")
 async def convert_note_to_pdf(payload: dict, background_tasks: BackgroundTasks):
