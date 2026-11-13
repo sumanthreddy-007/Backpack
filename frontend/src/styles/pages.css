@@ -77,7 +77,6 @@
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 14px rgba(16, 24, 40, 0.04);
     padding: 28px;
     margin-bottom: 20px;
-    transition: box-shadow .25s ease, transform .25s ease;
 }
 
 .page-card h2 {
@@ -102,7 +101,6 @@
     font-weight: 600;
     letter-spacing: .01em;
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
-    transition: background .2s ease, transform .15s ease, box-shadow .2s ease;
 }
 
 .page-btn:hover {
@@ -129,7 +127,6 @@
     font-size: 14px;
     color: #111827;
     outline: none;
-    transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
 }
 
 .page-input::placeholder,
@@ -140,9 +137,9 @@
 .page-input:focus,
 .page-select:focus,
 .page-textarea:focus {
-    border-color: #7652ff;
+    border-color: var(--accent);
     background: #ffffff;
-    box-shadow: 0 0 0 3px rgba(118, 82, 255, 0.12);
+    box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .page-input[type="file"] {
@@ -170,7 +167,6 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all .2s ease;
 }
 
 .pdf-tab.active {
@@ -203,12 +199,11 @@
     padding: 18px 20px;
     cursor: pointer;
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-    transition: all .2s ease;
 }
 
 .email-card:hover {
-    border-color: #7652ff;
-    box-shadow: 0 6px 16px rgba(118, 82, 255, 0.12);
+    border-color: var(--accent);
+    box-shadow: 0 6px 16px var(--accent-soft);
     transform: translateY(-2px);
 }
 
@@ -229,37 +224,6 @@
     margin-top: 10px;
     font-size: 13px;
     color: #9ca3af;
-}
-
-/* =====================================================
-   DEADLINES
-===================================================== */
-
-.deadline-card {
-    background: white;
-    border-radius: 14px;
-    border: 1px solid #eaecf0;
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-    padding: 18px 20px;
-    margin-bottom: 16px;
-    transition: all .2s ease;
-}
-
-.deadline-card:hover {
-    box-shadow: 0 6px 16px rgba(16, 24, 40, 0.08);
-    transform: translateY(-2px);
-}
-
-.deadline-title {
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 6px;
-}
-
-.deadline-date {
-    color: #7652ff;
-    font-size: 14px;
-    font-weight: 600;
 }
 
 /* =====================================================
